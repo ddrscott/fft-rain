@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+  <title>FFT Rain</title>
+  <style>
+      body {
+          margin: 0;
+          padding: 0;
+          background: black;
+      }
+      canvas {
+          position: absolute;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
+      }
+      button {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          margin: 10px;
+          padding: 10px;
+          background-color: rgba(255, 255, 255, 0.25);
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+      }
+      .bg {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          z-index: -1;
+          filter: brightness(100%);
+      }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <button id="button">Start Loop</button>
+  <img class="bg" src="images/jorgen-haland-2zD3cHs-mXA-unsplash.jpg"></img>
+  <script src="js/bg-audio.js"></script>
+</body>
+</html>
