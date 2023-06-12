@@ -9,7 +9,6 @@ const barWidth = Math.ceil(canvas.width / numBars);
 const barHeight = canvas.height / 8;
 const barSpacing = barWidth / 4;
 const barColor = 'rgba(255, 255, 255, 0.15)';
-const fftSize = numBars * 2;
 const audioContext = new AudioContext();
 let sourceNode = audioContext.createBufferSource();
 sourceNode.isPlaying = false;
@@ -21,26 +20,25 @@ const canvasContext = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-function draw__old() {
-    requestAnimationFrame(draw);
+let maxLow = 0.01;
 
-    const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-    analyserNode.getByteFrequencyData(dataArray);
+function movingAverage(n) {
+    const movingValues = Array(n).fill(0);
 
-    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < numBars; i++) {
-        const barX = i * barWidth + barSpacing;
-        //const barY = canvas.height - barHeight - (dataArray[i] / 255 * barHeight);
-        const barY = canvas.height - (dataArray[i] / 255 * barHeight);
-
-        canvasContext.fillStyle = barColor;
-        canvasContext.fillRect(barX, barY, barWidth, barHeight);
+    return (val) => {
+        movingValues.shift();
+        movingValues.push(val);
+        return movingValues.reduce((acc, curr) => acc + curr, 0) / movingValues.length;
     }
 }
 
+const averages = movingAverage(12);
+
 function draw() {
     requestAnimationFrame(draw);
+    if (!sourceNode.isPlaying) {
+        return;
+    }
 
     const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
     analyserNode.getByteFrequencyData(dataArray);
@@ -48,18 +46,20 @@ function draw() {
     canvasContext.clearRect(0, 0, canvas.width, canvas.height);
 
     // Check for low rumbling in the FFT
-    const lowRumbling = dataArray.slice(0, numBars / 4).reduce((acc, val) => acc + val, 0) / (numBars / 4) / 255;
+    const lowRumbling = dataArray.slice(0, numBars / 8).reduce((acc, val) => acc + val, 0) / (numBars / 8) / 255;
 
-    const minRumbling = 0.2; // Adjust this value to change the minimum rumbling threshold
-    const expFactor = 2; // Adjust this value to change the exponential factor
-    const brightness = Math.round(255 * Math.pow(Math.max(lowRumbling - minRumbling, 0), expFactor));
+    const avg = averages(lowRumbling);
 
-    // Adjust the background color based on the low rumbling level, but only if it's above the minimum threshold
-    const bgColor = `rgba(${brightness}, ${brightness}, ${brightness}, 1)`;
+    maxLow = lowRumbling > maxLow ? lowRumbling : maxLow;
+
+    if (lowRumbling >= avg) {
+        brightness = 75 + (lowRumbling / maxLow * 50.0);
+    } else {
+        brightness = 75
+    }
 
     const bg = document.querySelector('.bg');
     bg.style.filter = `brightness(${brightness}%)`;
-    // document.body.style.backgroundColor = bgColor;
 
     for (let i = 0; i < numBars; i++) {
         const barX = i * barWidth + barSpacing;
@@ -89,7 +89,7 @@ fetch(audioFile)
                 if (sourceNode.isPlaying) {
                     sourceNode.stop();
                     sourceNode.isPlaying = false;
-                    button.textContent = 'Start Loop';
+                    button.textContent = 'Play';
                 } else {
                     if (sourceNode.state === 'suspended') {
                         sourceNode.resume();
@@ -102,14 +102,14 @@ fetch(audioFile)
                         sourceNode.start();
                         sourceNode.isPlaying = true;
                     }
-                    button.textContent = 'Stop Loop';
+                    button.textContent = 'Pause';
                 }
             }
         });
 
         sourceNode.onended = () => {
             sourceNode.isPlaying = false;
-            button.textContent = 'Start Loop';
+            button.textContent = 'Play';
         };
     });
 
